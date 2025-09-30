@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Codi de Colors de Resistències</title>
+    <!-- Càrrega de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Definicions de colors de resistència per a Tailwind
+                        'color-Negre': '#000000',
+                        'color-Marró': '#964B00',
+                        'color-Vermell': '#FF0000',
+                        'color-Taronja': '#FFA500',
+                        'color-Groc': '#FFFF00',
+                        'color-Verd': '#008000',
+                        'color-Blau': '#0000FF',
+                        'color-Violeta': '#EE82EE',
+                        'color-Gris': '#808080',
+                        'color-Blanc': '#FFFFFF',
+                        'color-Or': '#FFD700',
+                        'color-Plata': '#C0C0C0',
+                        'color-SenseColor': '#f7d0a6', // Dummy color, visually handled by resistor body
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estil per als botons de color (mides i marges) */
+        .color-band {
+            width: 100%;
+            height: 40px;
+            border-radius: 0.5rem;
+            transition: transform 0.1s ease-in-out;
+            cursor: pointer;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .color-band:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        /* Estil per a la representació de la resistència */
+        #resistor-body {
+            height: 60px;
+            width: 100%;
+            max-width: 350px;
+            background-color: #f7d0a6; /* Beix/Marró clar - Aquest és el color del cos per a 'Sense color' */
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .band-segment {
+            width: 8px;
+            height: 60px;
+            background-color: black;
+            z-index: 10;
+        }
+        .band {
+            width: 10px;
+            height: 100%;
+            transition: background-color 0.5s ease;
+            position: relative;
+        }
+        #band4 {
+            margin-left: 25px; /* Separació visual per a la tolerància */
+        }
+        .resistor-lead {
+            width: 50px;
+            height: 2px;
+            background-color: silver;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        #lead-left { left: -50px; }
+        #lead-right { right: -50px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6 rounded-lg p-2 bg-white shadow-lg">
+            ⚡️ Calculadora i Eina d'Aprenentatge del Codi de Colors de Resistències
+        </h1>
+
+        <!-- Representació Visual de la Resistència -->
+        <div class="flex flex-col items-center justify-center py-8 bg-indigo-50 rounded-xl shadow-inner mb-8">
+            <div class="flex items-center">
+                <div class="resistor-lead" id="lead-left"></div>
+                <div id="resistor-body" class="flex-shrink-0">
+                    <div class="band-segment rounded-l-md" id="band1"></div>
+                    <div class="band-segment" id="band2"></div>
+                    <div class="band-segment" id="band3"></div>
+                    <!-- Separador -->
+                    <div class="w-8"></div>
+                    <div class="band-segment rounded-r-md" id="band4"></div>
+                </div>
+                <div class="resistor-lead" id="lead-right"></div>
+            </div>
+            <p id="resistor-value-display" class="mt-4 text-xl font-semibold text-gray-800 p-2 rounded-lg bg-white shadow-md">
+                Valor Nominal: --
+            </p>
+        </div>
+
+        <!-- PANELL PRINCIPAL: Calculadores -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+
+            <!-- Funcionalitat 1: Colors a Valor (Descodificador) -->
+            <div class="bg-white p-6 rounded-xl shadow-2xl border border-indigo-200">
+                <h2 class="text-xl font-bold text-indigo-600 mb-4 pb-2 border-b-2 border-indigo-100">1. Descodificador de Colors (4 Bandes)</h2>
+
+                <div class="space-y-4">
+                    <!-- Selector Banda 1 -->
+                    <div class="flex flex-col">
+                        <label for="select1" class="text-sm font-medium text-gray-600 mb-1">Banda 1 (1r Dígit)</label>
+                        <select id="select1" class="p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"></select>
+                    </div>
+
+                    <!-- Selector Banda 2 -->
+                    <div class="flex flex-col">
+                        <label for="select2" class="text-sm font-medium text-gray-600 mb-1">Banda 2 (2n Dígit)</label>
+                        <select id="select2" class="p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"></select>
+                    </div>
+
+                    <!-- Selector Multiplicador -->
+                    <div class="flex flex-col">
+                        <label for="select3" class="text-sm font-medium text-gray-600 mb-1">Banda 3 (Multiplicador)</label>
+                        <select id="select3" class="p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"></select>
+                    </div>
+
+                    <!-- Selector Tolerància -->
+                    <div class="flex flex-col">
+                        <label for="select4" class="text-sm font-medium text-gray-600 mb-1">Banda 4 (Tolerància)</label>
+                        <select id="select4" class="p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"></select>
+                    </div>
+                </div>
+
+                <!-- Resultats -->
+                <div class="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-300 shadow-inner">
+                    <h3 class="font-bold text-lg text-indigo-700 mb-2">Resultats del Càlcul</h3>
+                    <p class="text-gray-700">Valor Nominal: <span id="nominal-value" class="font-semibold text-lg">--</span></p>
+                    <p class="text-gray-700">Tolerància: <span id="tolerance-value" class="font-semibold">--</span></p>
+                    <p class="text-gray-700">Valor Màxim: <span id="max-value" class="font-semibold">--</span></p>
+                    <p class="text-gray-700">Valor Mínim: <span id="min-value" class="font-semibold">--</span></p>
+                </div>
+            </div>
+
+            <!-- Funcionalitat 2: Valor a Colors (Codificador) -->
+            <div class="bg-white p-6 rounded-xl shadow-2xl border border-indigo-200">
+                <h2 class="text-xl font-bold text-indigo-600 mb-4 pb-2 border-b-2 border-indigo-100">2. Codificador de Valor (4 Bandes)</h2>
+                
+                <div class="space-y-4">
+                    <!-- Input Valor Nominal -->
+                    <div class="flex flex-col">
+                        <label for="input-value" class="text-sm font-medium text-gray-600 mb-1">Valor Nominal (Ohms, p. ex. 3200 o 3.2k)</label>
+                        <input type="text" id="input-value" placeholder="3200" class="p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700">
+                    </div>
+
+                    <!-- Selector Tolerància -->
+                    <div class="flex flex-col">
+                        <label for="input-tolerance" class="text-sm font-medium text-gray-600 mb-1">Tolerància Desitjada</label>
+                        <select id="input-tolerance" class="p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700">
+                            <!-- Opcions de tolerància s'ompliran amb JS -->
+                        </select>
+                    </div>
+
+                    <button id="encode-button" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-150 shadow-md">
+                        Codificar a Colors
+                    </button>
+                </div>
+
+                <!-- Resultats Codificador -->
+                <div class="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-300 shadow-inner">
+                    <h3 class="font-bold text-lg text-yellow-700 mb-2">Colors Resultants</h3>
+                    <p class="text-gray-700">Banda 1 (Dígit): <span id="encoded-band1" class="font-semibold">--</span></p>
+                    <p class="text-gray-700">Banda 2 (Dígit): <span id="encoded-band2" class="font-semibold">--</span></p>
+                    <p class="text-gray-700">Banda 3 (Multiplicador): <span id="encoded-band3" class="font-semibold">--</span></p>
+                    <p class="text-gray-700">Banda 4 (Tolerància): <span id="encoded-band4" class="font-semibold">--</span></p>
+                    <p id="encoding-message" class="text-sm text-red-600 mt-2 font-medium"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secció de Teoria i Taula de Referència -->
+        <div class="bg-white p-6 rounded-xl shadow-2xl border border-blue-200">
+            <h2 class="text-xl font-bold text-blue-600 mb-4 pb-2 border-b-2 border-blue-100">Teoria i Taula de Referència (Codi de Colors 4 Bandes)</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Explicació Teòrica -->
+                <div>
+                    <h3 class="font-bold text-lg text-gray-700 mb-2">Com llegir el Codi de Colors:</h3>
+                    <p class="text-gray-600 mb-2">Per llegir correctament el valor d'una resistència, l'hem de col·locar de tal manera que les tres primeres bandes de colors quedin a l'esquerra i l'última (tolerància) quedi a la dreta.</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                        <li>**1a Banda (Primer Dígit):** Indica el primer dígit significatiu del valor.</li>
+                        <li>**2a Banda (Segon Dígit):** Indica el segon dígit significatiu del valor.</li>
+                        <li>**3a Banda (Multiplicador):** Indica la potència de 10 per la qual s'ha de multiplicar el nombre format pels dos dígits anteriors.</li>
+                        <li>**4a Banda (Tolerància):** Indica la precisió (el marge d'error, en percentatge) del valor nominal de la resistència.</li>
+                    </ul>
+                </div>
+
+                <!-- Taula de Referència de Colors -->
+                <div>
+                    <h3 class="font-bold text-lg text-gray-700 mb-2">Taula de Valors per Banda:</h3>
+                    <div id="color-table" class="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+                        <!-- La taula s'omplirà amb JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Taula de dades de la resistència (extreta de la imatge proporcionada + addició de 'Sense color')
+        const RESISTOR_DATA = [
+            { color: 'Negre', value: 0, multiplier: 1, tolerance: null, tailwind: 'color-Negre' },
+            { color: 'Marró', value: 1, multiplier: 10, tolerance: 0.01, tailwind: 'color-Marró' },
+            { color: 'Vermell', value: 2, multiplier: 100, tolerance: 0.02, tailwind: 'color-Vermell' },
+            { color: 'Taronja', value: 3, multiplier: 1000, tolerance: null, tailwind: 'color-Taronja' },
+            { color: 'Groc', value: 4, multiplier: 10000, tolerance: null, tailwind: 'color-Groc' },
+            { color: 'Verd', value: 5, multiplier: 100000, tolerance: 0.005, tailwind: 'color-Verd' },
+            { color: 'Blau', value: 6, multiplier: 1000000, tolerance: 0.0025, tailwind: 'color-Blau' },
+            { color: 'Violeta', value: 7, multiplier: 10000000, tolerance: 0.001, tailwind: 'color-Violeta' },
+            { color: 'Gris', value: 8, multiplier: 100000000, tolerance: 0.0005, tailwind: 'color-Gris' },
+            { color: 'Blanc', value: 9, multiplier: 1000000000, tolerance: null, tailwind: 'color-Blanc' },
+            { color: 'Or', value: null, multiplier: 0.1, tolerance: 0.05, tailwind: 'color-Or' },
+            { color: 'Plata', value: null, multiplier: 0.01, tolerance: 0.10, tailwind: 'color-Plata' },
+            { color: 'Sense color', value: null, multiplier: null, tolerance: 0.20, tailwind: 'color-SenseColor' } // Afegeix la tolerància del 20%
+        ];
+
+        // Color del cos de la resistència per a la representació visual sense banda de color (Sense color)
+        const RESISTOR_BODY_COLOR = '#f7d0a6';
+
+        // Funció per trobar una dada de color
+        const findColorData = (colorName) => RESISTOR_DATA.find(d => d.color === colorName);
+        const findColorByTolerance = (tolValue) => RESISTOR_DATA.find(d => d.tolerance === tolValue);
+        
+        // --- FUNCIONS AUXILIARS ---
+
+        // Funció per formatar el valor en Ohms amb prefixos (kΩ, MΩ)
+        function formatOhmValue(ohms) {
+            if (ohms >= 1e6) {
+                return `${(ohms / 1e6).toFixed(2).replace(/\.00$/, '')} MΩ`;
+            } else if (ohms >= 1e3) {
+                return `${(ohms / 1e3).toFixed(2).replace(/\.00$/, '')} kΩ`;
+            }
+            return `${ohms} Ω`;
+        }
+        
+        // Funció auxiliar per analitzar l'entrada d'Ohms (amb sufixos k, M)
+        function parseOhmInput(input) {
+            let value = input.toLowerCase().replace(/[\sΩ]/g, '');
+            if (value.endsWith('k')) {
+                return parseFloat(value.slice(0, -1)) * 1000;
+            }
+            if (value.endsWith('m')) {
+                return parseFloat(value.slice(0, -1)) * 1000000;
+            }
+            const num = parseFloat(value);
+            if (isNaN(num)) {
+                 throw new Error("Entrada no vàlida. Utilitza només números i opcionalment 'k' o 'M'.");
+            }
+            return num;
+        }
+
+        // --- INICIALITZACIÓ DE LA UI (Taula i Selectors) ---
+        
+        function populateReferenceTable() {
+            const tableContainer = document.getElementById('color-table');
+            let html = `
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-indigo-100">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Color</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Dígit (1a, 2a)</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Multiplicador (3a)</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tolerància (4a)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+            `;
+            RESISTOR_DATA.forEach(data => {
+                let colorDisplayBg = data.tailwind.substring(6);
+                let colorTextStyle = 'text-black';
+                let circleBorder = 'border: 1px solid #ccc;';
+
+                if (data.color === 'Negre') {
+                    colorTextStyle = 'text-white';
+                }
+
+                if (data.color === 'Sense color') {
+                    colorDisplayBg = 'transparent'; // Visualment sense color al cercle de mostra
+                    circleBorder = 'border: 1px dashed #999;'; // Per indicar absència
+                }
+                
+                html += `
+                    <tr>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                            <div class="inline-block h-4 w-4 rounded-full mr-2 ${colorTextStyle}" style="background-color: ${colorDisplayBg}; ${circleBorder}"></div>
+                            ${data.color}
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600">${data.value !== null ? data.value : '-'}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600">${data.multiplier !== null ? (data.multiplier === 1 ? 'x1' : `x${data.multiplier.toExponential().replace('e+', 'E')}`) : '-'}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600">${data.tolerance !== null ? `±${(data.tolerance * 100).toFixed(2).replace(/\.00$/, '')}%` : '-'}</td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+            tableContainer.innerHTML = html;
+        }
+
+        function populateSelectors() {
+            const bands = [
+                { id: 'select1', values: RESISTOR_DATA.filter(d => d.value !== null && d.color !== 'Negre') }, // Banda 1 no pot ser Negre
+                { id: 'select2', values: RESISTOR_DATA.filter(d => d.value !== null) }, // Bandes de dígit
+                { id: 'select3', values: RESISTOR_DATA.filter(d => d.multiplier !== null) }, // Multiplicador
+                { id: 'select4', values: RESISTOR_DATA.filter(d => d.tolerance !== null) }  // Tolerància (Inclou Or, Plata, Sense color)
+            ];
+
+            bands.forEach(band => {
+                const select = document.getElementById(band.id);
+                select.innerHTML = ''; // Neteja
+                
+                // Add default "Negre" option for band 1 and 2 if it's digit
+                if (band.id === 'select1' || band.id === 'select2') {
+                     // Banda 1 starts from Marró (1) in standard 4-band, but 0 is usually allowed for the 2nd band.
+                     // Let's refine the initial filtering for select1: 0-9 values only, and exclude Negre (0) for Band 1
+                     // As per common practice, Band 1 usually doesn't start with 0 (Negre).
+                     const filteredValues = band.values.filter(d => d.value !== null);
+                    
+                     // Special handling for Band 1: it cannot be 'Negre' (0)
+                     const finalValues = (band.id === 'select1') 
+                                        ? filteredValues.filter(d => d.color !== 'Negre')
+                                        : filteredValues;
+                     
+                     finalValues.forEach(data => {
+                         const option = document.createElement('option');
+                         option.value = data.color;
+                         option.textContent = `${data.color} (${data.value})`;
+                         select.appendChild(option);
+                     });
+
+                } else if (band.id === 'select3') {
+                     // Multiplier
+                     band.values.forEach(data => {
+                         const option = document.createElement('option');
+                         option.value = data.color;
+                         let display = data.color;
+                         display += ` (x${data.multiplier.toExponential().replace('e+', 'E')})`;
+                         option.textContent = display;
+                         select.appendChild(option);
+                     });
+                } else if (band.id === 'select4') {
+                    // Tolerance
+                    band.values.forEach(data => {
+                        const option = document.createElement('option');
+                        option.value = data.color;
+                        let display = data.color;
+                        display += ` (±${(data.tolerance * 100).toFixed(2).replace(/\.00$/, '')}%)`;
+                        option.textContent = display;
+                        select.appendChild(option);
+                    });
+                }
+
+                // Estableix valors inicials
+                if (band.id === 'select1') select.value = 'Marró'; // 1
+                if (band.id === 'select2') select.value = 'Negre'; // 0
+                if (band.id === 'select3') select.value = 'Vermell'; // x100
+                if (band.id === 'select4') select.value = 'Or'; // 5%
+            });
+
+            // Omplir selector de tolerància per al codificador
+            const toleranceSelect = document.getElementById('input-tolerance');
+            // Ús d'un Set per obtenir valors únics de tolerància i ordenar-los
+            const uniqueTolerances = [...new Set(RESISTOR_DATA.map(d => d.tolerance).filter(t => t !== null))].sort((a, b) => a - b);
+            toleranceSelect.innerHTML = uniqueTolerances.map(tol => {
+                const colorData = findColorByTolerance(tol);
+                const tolerancePercent = (tol * 100).toFixed(2).replace(/\.00$/, '');
+                // Selecciona Or (5%) per defecte
+                return `<option value="${tol}" ${colorData && colorData.color === 'Or' ? 'selected' : ''}>±${tolerancePercent}% (${colorData ? colorData.color : 'Color desconegut'})</option>`;
+            }).join('');
+        }
+
+        // --- FUNCIONS PRINCIPALS DE CÀLCUL ---
+
+        function updateResistorDisplay(c1, c2, c3, c4, value, tolerance) {
+            // Actualitza els colors visuals
+            document.getElementById('band1').style.backgroundColor = findColorData(c1).tailwind.substring(6);
+            document.getElementById('band2').style.backgroundColor = findColorData(c2).tailwind.substring(6);
+            document.getElementById('band3').style.backgroundColor = findColorData(c3).tailwind.substring(6);
+            
+            // La banda de tolerància pot ser 'Sense color'
+            const band4Element = document.getElementById('band4');
+            if (c4 === 'Sense color') {
+                band4Element.style.backgroundColor = 'transparent';
+                band4Element.style.border = '2px dashed #999'; // Simula l'absència de banda
+            } else {
+                band4Element.style.backgroundColor = findColorData(c4).tailwind.substring(6);
+                band4Element.style.border = 'none';
+            }
+
+            // Actualitza el text de la resistència
+            document.getElementById('resistor-value-display').textContent = `Valor Nominal: ${formatOhmValue(value)} ${tolerance}`;
+        }
+
+        function calculateResistance() {
+            // Obtenir els colors seleccionats
+            const color1 = document.getElementById('select1').value;
+            const color2 = document.getElementById('select2').value;
+            const color3 = document.getElementById('select3').value;
+            const color4 = document.getElementById('select4').value;
+
+            const data1 = findColorData(color1);
+            const data2 = findColorData(color2);
+            const data3 = findColorData(color3);
+            const data4 = findColorData(color4);
+
+            if (!data1 || !data2 || !data3 || !data4) {
+                console.error("Dades de color no trobades.");
+                return;
+            }
+
+            // Càlcul del valor base
+            const significantDigits = (data1.value * 10) + data2.value;
+            
+            // Càlcul del valor nominal
+            const nominalOhms = significantDigits * data3.multiplier;
+            
+            // Càlcul de la tolerància
+            const toleranceValue = data4.tolerance; // e.g., 0.05 (5%)
+            const tolerancePercentDisplay = `±${(toleranceValue * 100).toFixed(2).replace(/\.00$/, '')}%`;
+            const toleranceOhms = nominalOhms * toleranceValue;
+
+            // Càlcul dels valors màxim i mínim
+            const maxValue = nominalOhms + toleranceOhms;
+            const minValue = nominalOhms - toleranceOhms;
+
+            // Actualitzar els elements de resultats
+            document.getElementById('nominal-value').textContent = formatOhmValue(nominalOhms);
+            document.getElementById('tolerance-value').textContent = tolerancePercentDisplay;
+            document.getElementById('max-value').textContent = formatOhmValue(maxValue);
+            document.getElementById('min-value').textContent = formatOhmValue(minValue);
+            
+            // Actualitzar la visualització de la resistència
+            updateResistorDisplay(color1, color2, color3, color4, nominalOhms, tolerancePercentDisplay);
+        }
+
+        function encodeResistance() {
+            const inputValue = document.getElementById('input-value').value.trim();
+            const inputTolerance = parseFloat(document.getElementById('input-tolerance').value);
+            const messageElement = document.getElementById('encoding-message');
+            messageElement.textContent = ''; // Neteja missatges anteriors
+            
+            if (!inputValue || isNaN(inputTolerance)) {
+                messageElement.textContent = "Si us plau, introdueix un valor nominal i selecciona una tolerància.";
+                return;
+            }
+
+            // Normalitzar l'entrada (gestionar k, M)
+            let rawOhms;
+            try {
+                rawOhms = parseOhmInput(inputValue);
+            } catch (e) {
+                messageElement.textContent = e.message;
+                return;
+            }
+
+            // La resistència ha de ser positiva
+            if (rawOhms <= 0) {
+                 messageElement.textContent = "El valor nominal ha de ser superior a 0 Ω.";
+                 return;
+            }
+
+            // Trobem els colors per a la tolerància
+            const toleranceData = findColorByTolerance(inputTolerance);
+            const color4 = toleranceData.color;
+            
+            // Cerquem el millor multiplicador (Banda 3)
+            const digitsData = RESISTOR_DATA.filter(d => d.value !== null);
+            const multipliers = RESISTOR_DATA.filter(d => d.multiplier !== null && d.color !== 'Sense color');
+            
+            let bestMatch = null;
+            
+            for (const mData of multipliers) {
+                const m = mData.multiplier;
+                const significantDigitsFloat = rawOhms / m;
+                
+                // Comprovem si el resultat és un nombre enter de 10 a 99 (dos dígits significatius)
+                if (significantDigitsFloat >= 10 && significantDigitsFloat < 100) {
+                    // Comprovar si és un valor enter o molt proper a un enter (per evitar problemes de coma flotant)
+                    if (Math.abs(significantDigitsFloat - Math.round(significantDigitsFloat)) < 1e-9) {
+                        const significantDigits = Math.round(significantDigitsFloat);
+                        
+                        const digit1 = Math.floor(significantDigits / 10);
+                        const digit2 = significantDigits % 10;
+                        
+                        // Obtenim els colors
+                        const color1 = digitsData.find(d => d.value === digit1)?.color;
+                        const color2 = digitsData.find(d => d.value === digit2)?.color;
+                        const color3 = mData.color;
+
+                        if (color1 && color2 && color3) {
+                             // La primera banda no pot ser 'Negre' (0)
+                             if (color1 === 'Negre') {
+                                 continue;
+                             }
+                             
+                             // Trobem el primer match vàlid.
+                             bestMatch = { color1, color2, color3, rawOhms };
+                             break;
+                        }
+                    }
+                }
+            }
+
+            if (bestMatch) {
+                // Si trobem un match, actualitzem els displays
+                document.getElementById('encoded-band1').textContent = bestMatch.color1;
+                document.getElementById('encoded-band2').textContent = bestMatch.color2;
+                document.getElementById('encoded-band3').textContent = bestMatch.color3;
+                document.getElementById('encoded-band4').textContent = color4;
+
+                // Actualitzar visualització (utilitzant el valor codificat per a una representació precisa)
+                const d1Value = findColorData(bestMatch.color1).value;
+                const d2Value = findColorData(bestMatch.color2).value;
+                const multiplier = findColorData(bestMatch.color3).multiplier;
+                
+                const finalNominal = (d1Value * 10 + d2Value) * multiplier;
+                
+                const tolerancePercentDisplay = `±${(inputTolerance * 100).toFixed(2).replace(/\.00$/, '')}%`;
+                
+                updateResistorDisplay(bestMatch.color1, bestMatch.color2, bestMatch.color3, color4, finalNominal, tolerancePercentDisplay);
+
+                if (finalNominal !== rawOhms) {
+                    messageElement.textContent = `Nota: El valor s'ha arrodonit al valor de resistència estàndard més proper que es pot codificar: ${formatOhmValue(finalNominal)}`;
+                } else {
+                     messageElement.textContent = `Codi trobat per a ${formatOhmValue(rawOhms)}.`;
+                }
+
+            } else {
+                // No es va trobar cap codi de 4 bandes vàlid
+                messageElement.textContent = "No es va trobar cap codi de 4 bandes vàlid per a aquest valor nominal. Potser necessita 5 o 6 bandes.";
+                // Reseteja visualització
+                 document.getElementById('encoded-band1').textContent = '--';
+                 document.getElementById('encoded-band2').textContent = '--';
+                 document.getElementById('encoded-band3').textContent = '--';
+                 document.getElementById('encoded-band4').textContent = '--';
+            }
+        }
+
+        // --- INICIALITZACIÓ DELS ESDEVENIMENTS ---
+        
+        function initListeners() {
+            // Escolta els canvis als selectors per al Descodificador
+            document.getElementById('select1').addEventListener('change', calculateResistance);
+            document.getElementById('select2').addEventListener('change', calculateResistance);
+            document.getElementById('select3').addEventListener('change', calculateResistance);
+            document.getElementById('select4').addEventListener('change', calculateResistance);
+            
+            // Escolta el botó per al Codificador
+            document.getElementById('encode-button').addEventListener('click', encodeResistance);
+            
+            // Càlcul inicial en carregar
+            calculateResistance(); 
+        }
+
+        window.onload = function() {
+            populateReferenceTable();
+            populateSelectors();
+            initListeners();
+        };
+    </script>
+</body>
+</html>
